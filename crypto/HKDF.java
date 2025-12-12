@@ -4,6 +4,7 @@ import static java.lang.Math.ceil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -128,10 +129,18 @@ public class HKDF {
    * @return array of [newRootKey, chainKey] (32 bytes each)
    */
   public static byte[][] kdfRootKey(byte[] rootKey, byte[] dhOutput) {
-    // TODO: Derive 64 bytes using rootKey as salt, dhOutput as IKM
-    // Split into two 32-byte keys
-    // Use "DoubleRatchetRootKey" as info
-    throw new UnsupportedOperationException("Implement me!");
+    // Step 1: HKDF-Extract — PRK = HMAC(rootKey, dhOutput)
+    byte[] prk = extract(rootKey, dhOutput);
+
+    // Step 2: HKDF-Expand — derive 64 bytes
+    byte[] okm = expand(prk, "DoubleRatchetRootKey".getBytes(StandardCharsets.UTF_8), 64);
+
+    // Step 3: Split into two 32-byte keys
+    byte[] newRootKey = Arrays.copyOfRange(okm, 0, 32);
+    byte[] chainKey   = Arrays.copyOfRange(okm, 32, 64);
+
+    return new byte[][] { newRootKey, chainKey };
+
   }
 
   /**
@@ -142,9 +151,13 @@ public class HKDF {
    * @return array of [newChainKey, messageKey] (32 bytes each)
    */
   public static byte[][] kdfChainKey(byte[] chainKey) {
-    // TODO: Two approaches (Signal uses HMAC directly, but HKDF works too)
-    // Option 1: newChainKey = HMAC(chainKey, 0x02), messageKey = HMAC(chainKey, 0x01)
     // Option 2: Use HKDF with chainKey as both salt and IKM
-    throw new UnsupportedOperationException("Implement me!");
+   byte[] prk = extract(chainKey, chainKey);
+   byte[] okm = expand(prk,  "DoubleRatchetChainKey".getBytes(StandardCharsets.UTF_8), 64);
+
+    byte[] newChainKey = Arrays.copyOfRange(okm, 0, 32);
+    byte[] messageKey  = Arrays.copyOfRange(okm, 32, 64);
+
+    return new byte[][] { newChainKey, messageKey };
   }
 }
