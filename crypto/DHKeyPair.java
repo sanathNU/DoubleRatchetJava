@@ -165,4 +165,12 @@ public class DHKeyPair {
   public byte[] getPublicKeyBytes() {
     return Arrays.copyOf(publicKeyBytes, publicKeyBytes.length);
   }
+
+  private static byte[] reverse(byte[] arr) {
+    byte[] reversed = new byte[arr.length];
+    for (int i = 0; i < arr.length; i++) {
+      reversed[i] = arr[arr.length - 1 - i];
+    }
+    return reversed;
+  }
 }

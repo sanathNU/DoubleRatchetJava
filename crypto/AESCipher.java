@@ -51,7 +51,6 @@ public class AESCipher {
     if (key == null || plaintext == null || associatedData == null) return null;
     if (key.length != KEY_SIZE || plaintext.length != NONCE_SIZE || associatedData.length != TAG_SIZE) return null;
 
-    let SecretKeySpec
 
     throw new UnsupportedOperationException("Implement me!");
   }
