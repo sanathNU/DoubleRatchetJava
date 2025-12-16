@@ -24,6 +24,9 @@ class Message {
   private final byte[] ciphertext;
 
   public Message(Header header, byte[] ciphertext) {
+    if (header == null || ciphertext == null) {
+      throw new IllegalArgumentException("Header and ciphertext cannot be null");
+    }
     this.header = header;
     this.ciphertext = Arrays.copyOf(ciphertext, ciphertext.length);
   }
@@ -38,10 +41,17 @@ class Message {
    * @return serialized message
    */
   public byte[] toBytes() {
-    // TODO: Serialize message
-    // Include header length for easy parsing
+    byte[] headerBytes = header.toBytes();
+    int totalLength =
+        Integer.BYTES + headerBytes.length + ciphertext.length;
 
-    throw new UnsupportedOperationException("Implement me!");
+    ByteBuffer buffer = ByteBuffer.allocate(totalLength);
+
+    buffer.putInt(headerBytes.length);
+    buffer.put(headerBytes);
+    buffer.put(ciphertext);
+
+    return buffer.array();
   }
 
   /**
@@ -51,9 +61,25 @@ class Message {
    * @return Message object
    */
   public static Message fromBytes(byte[] data) {
-    // TODO: Deserialize message
+    if (data == null || data.length < Integer.BYTES) {
+      throw new IllegalArgumentException("Invalid message data");
+    }
 
-    throw new UnsupportedOperationException("Implement me!");
+    ByteBuffer buffer = ByteBuffer.wrap(data);
+
+    int headerLength = buffer.getInt();
+    if (headerLength <= 0 || headerLength > buffer.remaining()) {
+      throw new IllegalArgumentException("Invalid header length");
+    }
+
+    byte[] headerBytes = new byte[headerLength];
+    buffer.get(headerBytes);
+
+    byte[] ciphertext = new byte[buffer.remaining()];
+    buffer.get(ciphertext);
+
+    Header header = Header.fromBytes(headerBytes);
+    return new Message(header, ciphertext);
   }
 
   // Getters

@@ -15,16 +15,19 @@ import java.util.Arrays;
  * The header is authenticated but not encrypted
  */
 public class Header {
+  public static final int DH_PUBLIC_KEY_SIZE = 32;
   public static final int HEADER_SIZE = 32 + 4 + 4;
 
   private final byte[] dhPublicKey;
   private final int previousChainLength;
   private final int messageNumber;
+  private final int chainCounter;
 
-  public Header(byte[] dhPublicKey, int previousChainLength, int messageNumber) {
+  public Header(byte[] dhPublicKey, int previousChainLength, int messageNumber, int chainCounter) {
     this.dhPublicKey = Arrays.copyOf(dhPublicKey, dhPublicKey.length);
     this.previousChainLength = previousChainLength;
     this.messageNumber = messageNumber;
+    this.chainCounter = chainCounter;
   }
 
   /**
@@ -33,10 +36,17 @@ public class Header {
    * @return serialized header
    */
   public byte[] toBytes() {
-    // TODO: Serialize to bytes
-    // Use ByteBuffer for easy int conversion
-    // Format: dhPublicKey || previousChainLength || messageNumber
+    // dhPublicKey length + 4 bytes per int
+    ByteBuffer buffer = ByteBuffer.allocate(
+        dhPublicKey.length + Integer.BYTES * 2
+    );
 
+    buffer.put(dhPublicKey);
+    buffer.putInt(previousChainLength);
+    buffer.putInt(messageNumber);
+    buffer.putInt(chainCounter);
+
+    return buffer.array();
   }
 
   /**
@@ -46,14 +56,31 @@ public class Header {
    * @return Header object
    */
   public static Header fromBytes(byte[] data) {
-    // TODO: Deserialize from bytes
-    // Validate length, extract fields using ByteBuffer
+    if (data == null) {
+      throw new IllegalArgumentException("Data cannot be null");
+    }
 
-    throw new UnsupportedOperationException("Implement me!");
+    if (data.length != HEADER_SIZE) {
+      throw new IllegalArgumentException(
+          "Invalid header length: " + data.length
+      );
+    }
+
+    ByteBuffer buffer = ByteBuffer.wrap(data);
+
+    byte[] dhPublicKey = new byte[DH_PUBLIC_KEY_SIZE];
+    buffer.get(dhPublicKey);
+
+    int previousChainLength = buffer.getInt();
+    int messageNumber = buffer.getInt();
+    int chainCounter = buffer.getInt();
+
+    return new Header(dhPublicKey, previousChainLength, messageNumber, chainCounter);
   }
 
   // Getters
   public byte[] getDhPublicKey() { return Arrays.copyOf(dhPublicKey, dhPublicKey.length); }
   public int getPreviousChainLength() { return previousChainLength; }
   public int getMessageNumber() { return messageNumber; }
+  public int getChainCounter() { return chainCounter; }
 }
