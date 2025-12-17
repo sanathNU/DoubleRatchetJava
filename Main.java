@@ -24,7 +24,7 @@ public class Main {
     System.out.println("   Bhuvana's prekey: " +
         CryptoUtils.bytesToHex(bhuvanaPrekey.getPublicKeyBytes()).substring(0, 16) + "...");
 
-    // Alice generates ephemeral key and computes shared secret
+    // Aryan generates ephemeral key and computes shared secret
     DHKeyPair aryanEphemeral = DHKeyPair.generate();
     byte[] sharedSecret = aryanEphemeral.dh(bhuvanaPrekey.getPublicKey());
     System.out.println("   Shared secret established: " +
@@ -43,48 +43,48 @@ public class Main {
     // Step 3: Exchange messages
     System.out.println("\n3. Exchanging messages...\n");
 
-    // Alice sends first message
+    // Aryan sends first message
     String msg1 = "Hello Bhuvana! This is encrypted with Double Ratchet.";
     Message encrypted1 = aryan.encrypt(msg1.getBytes(StandardCharsets.UTF_8));
     System.out.println("Aryan -> Bhuvana: \"" + msg1 + "\"");
 
     byte[] decrypted1 = bhuvana.decrypt(encrypted1);
-    System.out.println("Bob received: \"" + new String(decrypted1, StandardCharsets.UTF_8) + "\"");
+    System.out.println("Bhuvana received: \"" + new String(decrypted1, StandardCharsets.UTF_8) + "\"");
 
-    // Bob replies
-    String msg2 = "Hi Alice! Got your message. Replying now.";
+    // Bhuvana replies
+    String msg2 = "Hi Aryan! Got your message. Replying now.";
     Message encrypted2 = bhuvana.encrypt(msg2.getBytes(StandardCharsets.UTF_8));
-    System.out.println("\nBob -> Alice: \"" + msg2 + "\"");
+    System.out.println("\nBhuvana -> Aryan: \"" + msg2 + "\"");
 
     byte[] decrypted2 = aryan.decrypt(encrypted2);
-    System.out.println("Alice received: \"" + new String(decrypted2, StandardCharsets.UTF_8) + "\"");
+    System.out.println("Aryan received: \"" + new String(decrypted2, StandardCharsets.UTF_8) + "\"");
 
-    // Alice sends another (tests symmetric ratchet)
+    // Aryan sends another (tests symmetric ratchet)
     String msg3 = "Great! Each message uses a different key.";
     Message encrypted3 = aryan.encrypt(msg3.getBytes(StandardCharsets.UTF_8));
-    System.out.println("\nAlice -> Bob: \"" + msg3 + "\"");
+    System.out.println("\nAryan -> Bhuvana: \"" + msg3 + "\"");
 
     byte[] decrypted3 = bhuvana.decrypt(encrypted3);
-    System.out.println("Bob received: \"" + new String(decrypted3, StandardCharsets.UTF_8) + "\"");
+    System.out.println("Bhuvana received: \"" + new String(decrypted3, StandardCharsets.UTF_8) + "\"");
 
     // Step 4: Test out-of-order delivery
     System.out.println("\n4. Testing out-of-order delivery...\n");
 
-    // Alice sends multiple messages
+    // Aryan sends multiple messages
     Message msgA = aryan.encrypt("Message A".getBytes(StandardCharsets.UTF_8));
     Message msgB = aryan.encrypt("Message B".getBytes(StandardCharsets.UTF_8));
     Message msgC = aryan.encrypt("Message C".getBytes(StandardCharsets.UTF_8));
-    System.out.println("Alice sent: A, B, C");
+    System.out.println("Aryan sent: A, B, C");
 
-    // Bob receives them out of order: C, A, B
+    // Bhuvana receives them out of order: C, A, B
     byte[] gotC = bhuvana.decrypt(msgC);
-    System.out.println("Bob got (first): " + new String(gotC, StandardCharsets.UTF_8));
+    System.out.println("Bhuvana got (first): " + new String(gotC, StandardCharsets.UTF_8));
 
     byte[] gotA = bhuvana.decrypt(msgA);
-    System.out.println("Bob got (second): " + new String(gotA, StandardCharsets.UTF_8));
+    System.out.println("Bhuvana got (second): " + new String(gotA, StandardCharsets.UTF_8));
 
     byte[] gotB = bhuvana.decrypt(msgB);
-    System.out.println("Bob got (third): " + new String(gotB, StandardCharsets.UTF_8));
+    System.out.println("Bhuvana got (third): " + new String(gotB, StandardCharsets.UTF_8));
 
     System.out.println("\n=== Demo Complete ===");
     System.out.println("\nAll messages decrypted successfully!");
