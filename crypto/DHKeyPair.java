@@ -62,14 +62,6 @@ public class DHKeyPair {
    * @return PublicKey object
    */
   public static PublicKey publicKeyFromBytes(byte[] publicKeyBytes) {
-    // Steps:
-    // 1. Create NamedParameterSpec for "X25519"
-    // 2. Create XECPublicKeySpec with the spec and BigInteger from bytes
-    // 3. Get KeyFactory for "XDH"
-    // 4. Generate public key from spec
-    //
-    // Note: X25519 uses little-endian byte order!
-    // You'll need to reverse the bytes before creating BigInteger
 
     if (publicKeyBytes.length != 32)
       throw new IllegalArgumentException("X25519 public key must be 32 bytes");
@@ -77,12 +69,15 @@ public class DHKeyPair {
     try {
       // Convert little-endian -> big-endian
       byte[] reversed = reverse(publicKeyBytes);
-
+      // 1. Create NamedParameterSpec for "X25519"
       NamedParameterSpec paramSpec = new NamedParameterSpec(ALGORITHM);
+      // 2. Create XECPublicKeySpec with the spec and BigInteger from bytes
       XECPublicKeySpec pubSpec = new XECPublicKeySpec(paramSpec, new BigInteger(1, reversed));
-
+      // 3. Get KeyFactory for "XDH"
       KeyFactory kf = KeyFactory.getInstance(KEY_AGREEMENT);
+      // 4. Generate public key from spec
       return kf.generatePublic(pubSpec);
+
     } catch (GeneralSecurityException e) {
       throw new RuntimeException("Failed to reconstruct X25519 public key", e);
     }

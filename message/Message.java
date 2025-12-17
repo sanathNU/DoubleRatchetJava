@@ -2,7 +2,7 @@ package doubleratchet.message;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import doubleratchet.header.Header;
+import doubleratchet.message.Header;
 
 /**
  * Message header containing DH public key and counters.
@@ -19,7 +19,7 @@ import doubleratchet.header.Header;
 /**
  * Complete encrypted message with header and ciphertext.
  */
-class Message {
+public class Message {
   private final Header header;
   private final byte[] ciphertext;
 

@@ -1,6 +1,7 @@
 package doubleratchet.ratchet;
 
 import doubleratchet.crypto.DHKeyPair;
+import doubleratchet.crypto.HKDF;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,14 +47,14 @@ public class RatchetState {
   }
 
   /**
-   * Initialize state for the initiator (Alice).
-   * Alice starts with Bob's prekey and computes initial shared secret.
+   * Initialize state for the initiator (Aryan).
+   * Aryan starts with Bhuvana's prekey and computes initial shared secret.
    *
    * @param sharedSecret initial shared secret (from X3DH or similar)
-   * @param remoteDHPublicKey Bob's initial DH public key
+   * @param remoteDHPublicKey Bhuvana's initial DH public key
    */
   public void initializeAsInitiator(byte[] sharedSecret, byte[] remoteDHPublicKey) {
-    // Steps:
+
     // 1. Generate new DH key pair
     this.dhKeyPair = DHKeyPair.generate();
 
@@ -65,9 +66,10 @@ public class RatchetState {
     byte[] dhOutput = dhKeyPair.dh(remoteDHPublicKey);
 
     //    - (rootKey, sendingChainKey) = KDF_RK(sharedSecret, DH_output)
-    KDFResult kdf = KDF_RK(sharedSecret, dhOutput);
-    this.rootKey = kdf.rootKey;
-    this.sendingChainKey = kdf.chainKey;
+    byte[][] kdf = HKDF.kdfRootKey(sharedSecret, dhOutput);
+//    KDFResult kdf = KDF_RK(sharedSecret, dhOutput);
+    this.rootKey = kdf[0];
+    this.sendingChainKey = kdf[1];
 
     // 4. receivingChainKey stays null until we receive a message
     this.receivingChainKey = null;
@@ -131,40 +133,62 @@ public class RatchetState {
   public byte[] popSkippedMessageKey(byte[] dhPublicKey, int messageNumber) {
     SkippedKeyId id = new SkippedKeyId(dhPublicKey, messageNumber);
     return skippedMessageKeys.remove(id);
-  }
-  }
-
+    }
   // Getters and setters
+  
+    public DHKeyPair getDhKeyPair() { return dhKeyPair; }
+    public void setDhKeyPair(DHKeyPair dhKeyPair) { this.dhKeyPair = dhKeyPair; }
+  
+    public byte[] getRemoteDHPublicKey() { return remoteDHPublicKey; }
+    public void setRemoteDHPublicKey(byte[] key) { this.remoteDHPublicKey = key; }
+  
+    public byte[] getRootKey() { return rootKey; }
+    public void setRootKey(byte[] rootKey) { this.rootKey = rootKey; }
+  
+    public byte[] getSendingChainKey() { return sendingChainKey; }
+    public void setSendingChainKey(byte[] key) { this.sendingChainKey = key; }
+  
+    public byte[] getReceivingChainKey() { return receivingChainKey; }
+    public void setReceivingChainKey(byte[] key) { this.receivingChainKey = key; }
+  
+    public int getSendingMessageNumber() { return sendingMessageNumber; }
+    public void setSendingMessageNumber(int n) { this.sendingMessageNumber = n; }
+    public void incrementSendingMessageNumber() { this.sendingMessageNumber++; }
+  
+    public int getReceivingMessageNumber() { return receivingMessageNumber; }
+    public void setReceivingMessageNumber(int n) { this.receivingMessageNumber = n; }
+    public void incrementReceivingMessageNumber() { this.receivingMessageNumber++; }
+  
+    public int getPreviousSendingChainLength() { return previousSendingChainLength; }
+    public void setPreviousSendingChainLength(int n) { this.previousSendingChainLength = n; }
+  
+    /**
+     * Key for identifying skipped messages.
+     */
+    private static class SkippedKeyId {
+      private final byte[] dhPublicKey;
+      private final int messageNumber;
 
-  public DHKeyPair getDhKeyPair() { return dhKeyPair; }
-  public void setDhKeyPair(DHKeyPair dhKeyPair) { this.dhKeyPair = dhKeyPair; }
+      public SkippedKeyId(byte[] dhPublicKey, int messageNumber) {
+        this.dhPublicKey = dhPublicKey;
+        this.messageNumber = messageNumber;
+      }
 
-  public byte[] getRemoteDHPublicKey() { return remoteDHPublicKey; }
-  public void setRemoteDHPublicKey(byte[] key) { this.remoteDHPublicKey = key; }
+      @Override
+      public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SkippedKeyId that = (SkippedKeyId) o;
+        return messageNumber == that.messageNumber &&
+               java.util.Arrays.equals(dhPublicKey, that.dhPublicKey);
+      }
 
-  public byte[] getRootKey() { return rootKey; }
-  public void setRootKey(byte[] rootKey) { this.rootKey = rootKey; }
-
-  public byte[] getSendingChainKey() { return sendingChainKey; }
-  public void setSendingChainKey(byte[] key) { this.sendingChainKey = key; }
-
-  public byte[] getReceivingChainKey() { return receivingChainKey; }
-  public void setReceivingChainKey(byte[] key) { this.receivingChainKey = key; }
-
-  public int getSendingMessageNumber() { return sendingMessageNumber; }
-  public void incrementSendingMessageNumber() { this.sendingMessageNumber++; }
-
-  public int getReceivingMessageNumber() { return receivingMessageNumber; }
-  public void setReceivingMessageNumber(int n) { this.receivingMessageNumber = n; }
-  public void incrementReceivingMessageNumber() { this.receivingMessageNumber++; }
-
-  public int getPreviousSendingChainLength() { return previousSendingChainLength; }
-  public void setPreviousSendingChainLength(int n) { this.previousSendingChainLength = n; }
-
-  /**
-   * Key for identifying skipped messages.
-   */
-  private record SkippedKeyId(byte[] dhPublicKey, int messageNumber) {
-    // TODO: Override equals and hashCode properly for byte[] comparison
+      @Override
+      public int hashCode() {
+        int result = java.util.Objects.hash(messageNumber);
+        result = 31 * result + java.util.Arrays.hashCode(dhPublicKey);
+        return result;
+      }
+    }
   }
-}
+  

@@ -1,5 +1,7 @@
 package doubleratchet.ratchet;
 
+import static doubleratchet.crypto.CryptoUtils.constantTimeEquals;
+
 import doubleratchet.crypto.DHKeyPair;
 import doubleratchet.crypto.HKDF;
 
@@ -31,7 +33,33 @@ public class DHRatchet {
    * different from what we have stored.
    */
   public static void dhRatchetStep(RatchetState state, byte[] newRemotePublicKey) {
-    throw new UnsupportedOperationException("Implement me!");
+
+    // 1. Save previous sending chain length (for header)
+    state.setPreviousSendingChainLength(state.getSendingMessageNumber());
+
+    // 2. Reset sending and receiving message counters for new chains
+    state.setSendingMessageNumber(0);
+    state.setReceivingMessageNumber(0);
+
+    // 3. Store the new remote public key
+    state.setRemoteDHPublicKey(newRemotePublicKey);
+
+    //4. DH with our current private key and their new public key
+    // This derives the new RECEVINg chain
+    byte[] dhOutput1 = state.getDhKeyPair().dh(newRemotePublicKey);
+    byte[][] kdfResult1 = HKDF.kdfRootKey(state.getRootKey(), dhOutput1);
+    state.setRootKey(kdfResult1[0]);
+    state.setReceivingChainKey(kdfResult1[1]);
+
+    // 5. Generate NEW DH key pair for our side
+    state.setDhKeyPair(DHKeyPair.generate());
+
+    // 6. DH with OUR NEW private key and THEIR public key
+    //    This derives the new SENDING chain
+    byte[] dhOutput2 = state.getDhKeyPair().dh(newRemotePublicKey);
+    byte[][] kdfResult2 = HKDF.kdfRootKey(state.getRootKey(), dhOutput2);
+    state.setRootKey(kdfResult2[0]);
+    state.setSendingChainKey(kdfResult2[1]);
   }
 
   /**
@@ -42,10 +70,10 @@ public class DHRatchet {
    * @return true if the public key is different (need to ratchet)
    */
   public static boolean needsDHRatchet(RatchetState state, byte[] receivedPublicKey) {
-    // TODO: Compare received public key with stored remote public key
-    // Use constant-time comparison from CryptoUtils!
-    // Return true if they differ or if we don't have a remote key yet
-
-    throw new UnsupportedOperationException("Implement me!");
+    byte[] storedRemoteKey = state.getRemoteDHPublicKey();
+    if (storedRemoteKey == null) {
+      return true;
+    }
+    return !constantTimeEquals(storedRemoteKey, receivedPublicKey);
   }
 }

@@ -13,9 +13,10 @@ import doubleratchet.crypto.HKDF;
  * Chain key derivation is one-way: you cannot derive previous
  * keys from current keys (forward secrecy within a chain).
  *
- * TODO: Implement the symmetric ratchet step
  */
 public class SymmetricRatchet {
+
+  private static final int MAX_SKIP = 1000;
 
   /**
    * Result of a symmetric ratchet step.
@@ -41,10 +42,11 @@ public class SymmetricRatchet {
    * @return new chain key and message key
    */
   public static RatchetStepResult step(byte[] chainKey) {
-    // TODO: Implement symmetric ratchet step
-    // Use HKDF.kdfChainKey or implement directly with HMAC
-
-    throw new UnsupportedOperationException("Implement me!");
+    if (chainKey == null || chainKey.length != 32) {
+      throw new IllegalArgumentException("Chain key must be 32 bytes");
+    }
+    byte[][] derived = HKDF.kdfChainKey(chainKey);
+    return new RatchetStepResult(derived[0], derived[1]);
   }
 
   /**
@@ -58,16 +60,48 @@ public class SymmetricRatchet {
    * @throws IllegalStateException if too many messages would be skipped
    */
   public static void skipMessageKeys(RatchetState state, int untilMessageNumber) {
-    // TODO: Implement message key skipping
-    // Steps:
-    // 1. Check that we won't exceed MAX_SKIP
+
     // 2. While receivingMessageNumber < untilMessageNumber:
     //    a. Step the receiving chain
     //    b. Store the message key in skippedMessageKeys
     //    c. Update receivingChainKey
     //    d. Increment receivingMessageNumber
 
-    throw new UnsupportedOperationException("Implement me!");
+    int currentMsgNum = state.getReceivingMessageNumber();
+    int toSkip = untilMessageNumber - currentMsgNum;
+
+    // 1. Check that we won't exceed MAX_SKIP
+    if (toSkip > MAX_SKIP) {
+      throw new IllegalStateException(
+          "Too many skipped messages: " + toSkip + " exceeds max " + MAX_SKIP);
+    }
+
+    if (toSkip < 0) {
+      throw new IllegalStateException();
+    }
+
+    byte[] receivingChainKey = state.getReceivingChainKey();
+    if (receivingChainKey == null) {
+      return;
+    }
+
+    while (state.getReceivingMessageNumber() < untilMessageNumber) {
+      RatchetStepResult result = step(receivingChainKey);
+
+      // Store the message key for later retrieval
+      state.storeSkippedMessageKey(
+          state.getRemoteDHPublicKey(),
+          state.getReceivingMessageNumber(),
+          result.messageKey()
+      );
+
+      // Update for next iteration
+      receivingChainKey = result.newChainKey();
+      state.incrementReceivingMessageNumber();
+    }
+
+    // Update state with final chain key
+    state.setReceivingChainKey(receivingChainKey);
   }
 
   /**
@@ -77,13 +111,17 @@ public class SymmetricRatchet {
    * @return message key for encryption
    */
   public static byte[] advanceSendingChain(RatchetState state) {
-    // TODO: Step the sending chain
     // 1. Call step(sendingChainKey)
+    RatchetStepResult result = step(state.getSendingChainKey());
+
     // 2. Update state with new chain key
+    state.setSendingChainKey(result.newChainKey());
     // 3. Increment sending message number
+    state.incrementSendingMessageNumber();
     // 4. Return message key
 
-    throw new UnsupportedOperationException("Implement me!");
+    return result.messageKey();
+
   }
 
   /**
@@ -93,9 +131,12 @@ public class SymmetricRatchet {
    * @return message key for decryption
    */
   public static byte[] advanceReceivingChain(RatchetState state) {
-    // TODO: Step the receiving chain
     // Same pattern as advanceSendingChain but for receiving
+    RatchetStepResult result = step(state.getReceivingChainKey());
 
-    throw new UnsupportedOperationException("Implement me!");
+    state.setReceivingChainKey(result.newChainKey());
+    state.incrementReceivingMessageNumber();
+
+    return result.messageKey();
   }
 }

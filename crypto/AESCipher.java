@@ -10,12 +10,6 @@ import java.security.GeneralSecurityException;
 /**
  * AES-256-GCM Authenticated Encryption.
  *
- * GCM (Galois/Counter Mode) provides:
- * - Confidentiality (encryption)
- * - Authenticity (built-in MAC)
- * - Associated Data support (authenticate unencrypted header)
- *
- * TODO: Implement AES-256-GCM encryption and decryption
  */
 public class AESCipher {
 
@@ -59,7 +53,6 @@ public class AESCipher {
     // 4. Create GCMParameterSpec with TAG_SIZE and nonce
     GCMParameterSpec spec = new GCMParameterSpec(TAG_SIZE, nonce);
 
-
     // 5. Create SecretKeySpec from key
     SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
 
@@ -96,7 +89,6 @@ public class AESCipher {
   public static byte[] decrypt(byte[] key, byte[] ciphertextWithNonce, byte[] associatedData)
       throws GeneralSecurityException {
 
-    // Steps:
     // 1. Validate key size and minimum ciphertext length
     if (key == null || ciphertextWithNonce == null) {
       throw new IllegalArgumentException("Key and ciphertext must not be null");

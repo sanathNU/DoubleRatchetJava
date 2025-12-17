@@ -116,6 +116,9 @@ public class HKDF {
   public static byte[] deriveKey(byte[] salt, byte[] inputKeyMaterial,
                                  byte[] info, int length) {
     byte[] prk = extract(salt, inputKeyMaterial);
+    if (info == null) {
+      info = new byte[0];
+    }
     return expand(prk, info, length);
   }
 
