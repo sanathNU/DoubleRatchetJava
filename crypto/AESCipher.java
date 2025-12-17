@@ -1,5 +1,7 @@
 package doubleratchet.crypto;
 
+import java.security.SecureRandom;
+import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -36,23 +38,48 @@ public class AESCipher {
   public static byte[] encrypt(byte[] key, byte[] plaintext, byte[] associatedData)
       throws GeneralSecurityException {
 
-    // TODO: Implement AES-GCM encryption
     // Steps:
     // 1. Validate key is KEY_SIZE bytes
+    if (key == null || plaintext == null) {
+      throw new IllegalArgumentException("Key and plaintext must not be null");
+    }
+
+    if (key.length != KEY_SIZE) {
+      throw new IllegalArgumentException("Key must be 256 bits");
+    }
+
     // 2. Generate random nonce (NONCE_SIZE bytes)
+    byte[] nonce = new byte[NONCE_SIZE];
+    SecureRandom random = new SecureRandom();
+    random.nextBytes(nonce);
+
     // 3. Create Cipher instance for ALGORITHM
+    Cipher cipher = Cipher.getInstance(ALGORITHM);
+
     // 4. Create GCMParameterSpec with TAG_SIZE and nonce
+    GCMParameterSpec spec = new GCMParameterSpec(TAG_SIZE, nonce);
+
+
     // 5. Create SecretKeySpec from key
+    SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+
     // 6. Init cipher in ENCRYPT_MODE
+    cipher.init(Cipher.ENCRYPT_MODE, keySpec, spec);
+
     // 7. If associatedData != null, call updateAAD()
-    // 8. doFinal to get ciphertext (includes tag at end)
+    if (associatedData != null) {
+      cipher.updateAAD(associatedData);
+    }
+
+    // 8. Encrypt (ciphertext + tag)
+    byte[] ciphertextAndTag = cipher.doFinal(plaintext);
+
     // 9. Prepend nonce to output
+    byte[] output = new byte[nonce.length + ciphertextAndTag.length];
+    System.arraycopy(nonce, 0, output, 0, nonce.length);
+    System.arraycopy(ciphertextAndTag, 0, output, nonce.length, ciphertextAndTag.length);
 
-    if (key == null || plaintext == null || associatedData == null) return null;
-    if (key.length != KEY_SIZE || plaintext.length != NONCE_SIZE || associatedData.length != TAG_SIZE) return null;
-
-
-    throw new UnsupportedOperationException("Implement me!");
+    return output;
   }
 
   /**
@@ -69,17 +96,43 @@ public class AESCipher {
   public static byte[] decrypt(byte[] key, byte[] ciphertextWithNonce, byte[] associatedData)
       throws GeneralSecurityException {
 
-    // TODO: Implement AES-GCM decryption
     // Steps:
     // 1. Validate key size and minimum ciphertext length
-    // 2. Extract nonce (first NONCE_SIZE bytes)
-    // 3. Extract ciphertext+tag (remaining bytes)
-    // 4. Create Cipher, GCMParameterSpec, SecretKeySpec
-    // 5. Init cipher in DECRYPT_MODE
-    // 6. If associatedData != null, call updateAAD()
-    // 7. doFinal - will throw if authentication fails!
+    if (key == null || ciphertextWithNonce == null) {
+      throw new IllegalArgumentException("Key and ciphertext must not be null");
+    }
+    if (key.length != KEY_SIZE) {
+      throw new IllegalArgumentException("Key must be 256 bits");
+    }
 
-    throw new UnsupportedOperationException("Implement me!");
+    if (ciphertextWithNonce.length < NONCE_SIZE + 16) {
+      throw new IllegalArgumentException("Ciphertext too short");
+    }
+
+    // 2. Extract nonce (first NONCE_SIZE bytes)
+    byte[] nonce = Arrays.copyOfRange(
+        ciphertextWithNonce, 0, NONCE_SIZE);
+
+    // 3. Extract ciphertext+tag (remaining bytes)
+    byte[] ciphertextAndTag = Arrays.copyOfRange(
+        ciphertextWithNonce, NONCE_SIZE, ciphertextWithNonce.length);
+
+    // 4. Create Cipher, GCMParameterSpec, SecretKeySpec
+    Cipher cipher = Cipher.getInstance(ALGORITHM);
+    GCMParameterSpec spec = new GCMParameterSpec(TAG_SIZE, nonce);
+    SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+
+    // 5. Init cipher in DECRYPT_MODE
+    cipher.init(Cipher.DECRYPT_MODE, keySpec, spec);
+
+    // 6. If associatedData != null, call updateAAD()
+    if (associatedData != null) {
+      cipher.updateAAD(associatedData);
+    }
+
+    // 7. doFinal - will throw if authentication fails!
+    return cipher.doFinal(ciphertextAndTag);
+
   }
 
   /**

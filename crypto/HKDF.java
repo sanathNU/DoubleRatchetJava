@@ -101,7 +101,6 @@ public class HKDF {
       output.write(previousT, 0, previousT.length);
     }
 
-
     byte[] okm = output.toByteArray();
     return Arrays.copyOf(okm, length);
   }

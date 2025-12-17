@@ -122,15 +122,14 @@ public class DHKeyPair {
    */
   public byte[] dh(PublicKey theirPublicKey) {
     // Steps:
-    // 1. Get KeyAgreement for "XDH"
-    // 2. Init with this.privateKey
-    // 3. doPhase with theirPublicKey
-    // 4. generateSecret()
-
     try {
+      // 1. Get KeyAgreement for "XDH"
       KeyAgreement ka = KeyAgreement.getInstance(KEY_AGREEMENT);
+      // 2. Init with this.privateKey
       ka.init(privateKey);
+      // 3. doPhase with theirPublicKey
       ka.doPhase(theirPublicKey, true);
+      // 4. generateSecret()
       return ka.generateSecret();  // 32 bytes
 
     } catch (GeneralSecurityException e) {
