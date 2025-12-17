@@ -28,9 +28,6 @@ public class DHRatchet {
    * <p>
    * This is called when we receive a message with a DH public key
    * different from what we have stored.
-   * <p>
-   * This is called when we receive a message with a DH public key
-   * different from what we have stored.
    */
   public static void dhRatchetStep(RatchetState state, byte[] newRemotePublicKey) {
 
@@ -45,7 +42,7 @@ public class DHRatchet {
     state.setRemoteDHPublicKey(newRemotePublicKey);
 
     //4. DH with our current private key and their new public key
-    // This derives the new RECEVINg chain
+    // This derives the new RECEIVING chain
     byte[] dhOutput1 = state.getDhKeyPair().dh(newRemotePublicKey);
     byte[][] kdfResult1 = HKDF.kdfRootKey(state.getRootKey(), dhOutput1);
     state.setRootKey(kdfResult1[0]);

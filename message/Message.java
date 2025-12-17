@@ -7,11 +7,10 @@ import doubleratchet.message.Header;
 /**
  * Message header containing DH public key and counters.
  *
- * Header format (44 bytes total):
+ * Header format (40 bytes total):
  * - DH public key: 32 bytes
  * - Previous chain length: 4 bytes (int)
  * - Message number: 4 bytes (int)
- * - Counter for this chain: 4 bytes (int)
  *
  * The header is authenticated but not encrypted
  */

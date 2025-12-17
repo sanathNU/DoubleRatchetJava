@@ -144,7 +144,6 @@ public class DHKeyPair {
   }
 
   // Getters
-
   public PrivateKey getPrivateKey() {
     return privateKey;
   }
