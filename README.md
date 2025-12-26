@@ -1,4 +1,4 @@
-# Double Ratchet + AES Implementation
+# Double Ratchet Implementation
 
 A pure Java implementation of the Double Ratchet Algorithm with AES-256-GCM encryption, based on the Signal Protocol specification. This project demonstrates end-to-end encryption with forward secrecy and break-in recovery capabilities.
 
