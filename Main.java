@@ -44,7 +44,7 @@ public class Main {
     System.out.println("\n3. Exchanging messages...\n");
 
     // Aryan sends first message
-    String msg1 = "Hello Bhuvana! This is encrypted with Double Ratchet.";
+    String msg1 = "Hello Bhuvana! How're you doing?";
     Message encrypted1 = aryan.encrypt(msg1.getBytes(StandardCharsets.UTF_8));
     System.out.println("Aryan -> Bhuvana: \"" + msg1 + "\"");
 
@@ -52,15 +52,15 @@ public class Main {
     System.out.println("Bhuvana received: \"" + new String(decrypted1, StandardCharsets.UTF_8) + "\"");
 
     // Bhuvana replies
-    String msg2 = "Hi Aryan! Got your message. Replying now.";
+    String msg2 = "Hi Aryan! Got your message. I'm doing great! How are you doing?";
     Message encrypted2 = bhuvana.encrypt(msg2.getBytes(StandardCharsets.UTF_8));
     System.out.println("\nBhuvana -> Aryan: \"" + msg2 + "\"");
 
     byte[] decrypted2 = aryan.decrypt(encrypted2);
     System.out.println("Aryan received: \"" + new String(decrypted2, StandardCharsets.UTF_8) + "\"");
 
-    // Aryan sends another (tests symmetric ratchet)
-    String msg3 = "Great! Each message uses a different key.";
+    // Aryan sends another
+    String msg3 = "I'm going good too!";
     Message encrypted3 = aryan.encrypt(msg3.getBytes(StandardCharsets.UTF_8));
     System.out.println("\nAryan -> Bhuvana: \"" + msg3 + "\"");
 
@@ -88,8 +88,6 @@ public class Main {
 
     System.out.println("\n=== Demo Complete ===");
     System.out.println("\nAll messages decrypted successfully!");
-    System.out.println("Forward secrecy: Each message used a unique key");
-    System.out.println("Break-in recovery: DH ratchet stepped on each reply");
   }
 
 

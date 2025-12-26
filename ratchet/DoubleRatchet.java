@@ -89,6 +89,7 @@ public class DoubleRatchet {
     // 1. Extract header
         Header header = message.getHeader();
         byte[] theirPublicKey = header.getDhPublicKey();
+
     // 2. Try to use a skipped message key first
         byte[] skippedKey = state.popSkippedMessageKey(
             theirPublicKey, header.getMessageNumber()
@@ -98,6 +99,7 @@ public class DoubleRatchet {
                 skippedKey, message.getCiphertext(), header.toBytes()
             );
         }
+
     // 3. Check if we need a DH ratchet step
         if (DHRatchet.needsDHRatchet(state, theirPublicKey)) {
             // Skip any remaining message keys in old receiving chain
